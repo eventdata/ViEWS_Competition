@@ -63,6 +63,12 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
         The relative path to the file contains PRIO-grid level features of views data features
     path_u : str
         The relative path to the file contains PRIO-grid level features of utd event data features   
+    event_data : bool
+        Parameter that controls whether we want to use utd event data as additional feature inputs
+    start_month : int
+        ID of month that defines the first month of the data, month 0 refers to Jan, 1980
+    end_month : int
+        ID of month that defines the last month of the data
 
     Returns:
     --------

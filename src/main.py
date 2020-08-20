@@ -97,7 +97,7 @@ test_iter = th.utils.data.DataLoader(test_data, batch_size, shuffle=True)
 
 loss = nn.MSELoss()
 g = g.to(device)
-model = STGCN(channels, n_his, n_nodes, g, p_drop, n_layer, control_str).to(device)
+model = STGCNCNN(channels, n_his, n_nodes, g, p_drop, n_layer, control_str).to(device)
 optimizer = th.optim.RMSprop(model.parameters(), lr=lr)
 scheduler = th.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.7)
 # print(summary(model, (32, 48, 54, 10677)))
@@ -126,7 +126,7 @@ for epoch in range(1, epochs + 1):
     print("epoch", epoch, ", train loss:", l_sum / n, ", validation loss:", val_loss)
 
 
-best_model = STGCN(channels, n_his, n_nodes, g, p_drop, n_layer, control_str).to(device)
+best_model = STGCNCNN(channels, n_his, n_nodes, g, p_drop, n_layer, control_str).to(device)
 best_model.load_state_dict(th.load(save_path))     
 
 
