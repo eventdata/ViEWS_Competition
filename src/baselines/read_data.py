@@ -1,0 +1,61 @@
+import pandas as pd
+
+def clean_data(path, feature_list):
+    df = pd.read_parquet(path)
+    new_df = df[feature_list]
+    return new_df
+
+feature_list = ['year',
+                # 'month_id',
+                # 'pg_id',
+                'acled_count_pr',
+                'acled_fat_pr',
+                'ged_best_ns',
+                'ged_best_os',
+                'ged_best_sb',
+                'ged_count_ns',
+                'ged_count_os',
+                'ged_count_sb',
+                'pgd_agri_gc',
+                'pgd_agri_ih',
+                'pgd_aquaveg_gc',
+                'pgd_barren_gc',
+                'pgd_barren_ih',
+                'pgd_bdist3',
+                'pgd_capdist',
+                'pgd_cmr_mean',
+                'pgd_diamprim',
+                'pgd_diamsec',
+                'pgd_drug_y',
+                'pgd_excluded',
+                'pgd_forest_gc',
+                'pgd_forest_ih',
+                'pgd_gcp_mer',
+                'pgd_gem',
+                'pgd_goldplacer',
+                'pgd_goldsurface',
+                'pgd_goldvein',
+                'pgd_grass_ih',
+                'pgd_gwarea',
+                'pgd_harvarea',
+                'pgd_herb_gc',
+                'pgd_imr_mean',
+                'pgd_landarea',
+                'pgd_maincrop',
+                'pgd_mountains_mean',
+                'pgd_nlights_calib_mean',
+                'pgd_pasture_ih',
+                'pgd_petroleum',
+                'pgd_pop_gpw_sum',
+                'pgd_savanna_ih',
+                'pgd_shrub_gc',
+                'pgd_shrub_ih',
+                'pgd_temp',
+                'pgd_ttime_mean',
+                'pgd_urban_gc',
+                'pgd_urban_ih',
+                'pgd_water_gc',
+                'pgd_water_ih']
+path = 'data/processed/pgm_africa_imp_0.parquet'
+new_df = clean_data(path, feature_list) 
+print('hello')
