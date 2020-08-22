@@ -77,10 +77,26 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
         number of time steps, n represents number of nodes, and d represents
         number of features
     '''
-    df_all = pd.read_parquet(path)
-    # Feature list used in the ViEWS data
+    df_all = pd.read_parquet(path_v)
+    # # Feature list used in the ViEWS data
+    # views_features = ['acled_count_pr', 'acled_fat_pr', 'ged_best_ns',
+    #                   'ged_best_os', 'ged_best_sb', 'ged_count_ns',
+    #                   'ged_count_os', 'ged_count_sb', 'pgd_agri_gc',
+    #                   'pgd_agri_ih', 'pgd_aquaveg_gc', 'pgd_barren_gc',
+    #                   'pgd_barren_ih', 'pgd_bdist3', 'pgd_capdist',
+    #                   'pgd_cmr_mean', 'pgd_diamprim', 'pgd_diamsec',
+    #                   'pgd_drug_y', 'pgd_excluded', 'pgd_forest_gc',
+    #                   'pgd_forest_ih', 'pgd_gcp_mer', 'pgd_gem',
+    #                   'pgd_goldplacer', 'pgd_goldsurface', 'pgd_goldvein',
+    #                   'pgd_grass_ih', 'pgd_gwarea', 'pgd_harvarea',
+    #                   'pgd_herb_gc', 'pgd_imr_mean', 'pgd_landarea',
+    #                   'pgd_maincrop', 'pgd_mountains_mean', 'pgd_nlights_calib_mean',
+    #                   'pgd_pasture_ih', 'pgd_petroleum', 'pgd_pop_gpw_sum',
+    #                   'pgd_savanna_ih', 'pgd_shrub_gc', 'pgd_shrub_ih',
+    #                   'pgd_temp', 'pgd_ttime_mean', 'pgd_urban_gc',
+    #                   'pgd_urban_ih', 'pgd_water_gc', 'pgd_water_ih', 'ln_ged_best_sb']
     views_features = ['acled_count_pr', 'acled_fat_pr', 'ged_best_ns',
-                      'ged_best_os', 'ged_best_sb', 'ged_count_ns',
+                      'ged_best_os', 'ged_count_ns',
                       'ged_count_os', 'ged_count_sb', 'pgd_agri_gc',
                       'pgd_agri_ih', 'pgd_aquaveg_gc', 'pgd_barren_gc',
                       'pgd_barren_ih', 'pgd_bdist3', 'pgd_capdist',
@@ -94,7 +110,8 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
                       'pgd_pasture_ih', 'pgd_petroleum', 'pgd_pop_gpw_sum',
                       'pgd_savanna_ih', 'pgd_shrub_gc', 'pgd_shrub_ih',
                       'pgd_temp', 'pgd_ttime_mean', 'pgd_urban_gc',
-                      'pgd_urban_ih', 'pgd_water_gc', 'pgd_water_ih', 'ln_ged_best_sb']
+                      'pgd_urban_ih', 'pgd_water_gc', 'pgd_water_ih', 'ln_ged_best_sb']  
+    
     df_views_features = df_all[views_features]
     idx = pd.IndexSlice
     df_sliced = df_views_features.loc[idx[start_month:end_month]]
@@ -103,7 +120,7 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
     if True in df_sliced.isna().any().tolist():
         raise Exception('Nan exists in the dataset, please double-check.')
     
-    views_data = np.reshape(df_sliced.values, (end_month - start_month + 1, -1, 49))
+    views_data = np.reshape(df_sliced.values, (end_month - start_month + 1, -1, 48))
     return views_data
 
 
