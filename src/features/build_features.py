@@ -7,8 +7,10 @@ This program aims to process the data and generate features for STGCN
 import numpy as np
 import pandas as pd
 import torch as th
+import pickle as pk
 from collections import defaultdict
 import bisect
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 
 def get_adj_matrix(path):
@@ -77,24 +79,8 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
         number of time steps, n represents number of nodes, and d represents
         number of features
     '''
-    df_all = pd.read_parquet(path_v)
-    # # Feature list used in the ViEWS data
-    # views_features = ['acled_count_pr', 'acled_fat_pr', 'ged_best_ns',
-    #                   'ged_best_os', 'ged_best_sb', 'ged_count_ns',
-    #                   'ged_count_os', 'ged_count_sb', 'pgd_agri_gc',
-    #                   'pgd_agri_ih', 'pgd_aquaveg_gc', 'pgd_barren_gc',
-    #                   'pgd_barren_ih', 'pgd_bdist3', 'pgd_capdist',
-    #                   'pgd_cmr_mean', 'pgd_diamprim', 'pgd_diamsec',
-    #                   'pgd_drug_y', 'pgd_excluded', 'pgd_forest_gc',
-    #                   'pgd_forest_ih', 'pgd_gcp_mer', 'pgd_gem',
-    #                   'pgd_goldplacer', 'pgd_goldsurface', 'pgd_goldvein',
-    #                   'pgd_grass_ih', 'pgd_gwarea', 'pgd_harvarea',
-    #                   'pgd_herb_gc', 'pgd_imr_mean', 'pgd_landarea',
-    #                   'pgd_maincrop', 'pgd_mountains_mean', 'pgd_nlights_calib_mean',
-    #                   'pgd_pasture_ih', 'pgd_petroleum', 'pgd_pop_gpw_sum',
-    #                   'pgd_savanna_ih', 'pgd_shrub_gc', 'pgd_shrub_ih',
-    #                   'pgd_temp', 'pgd_ttime_mean', 'pgd_urban_gc',
-    #                   'pgd_urban_ih', 'pgd_water_gc', 'pgd_water_ih', 'ln_ged_best_sb']
+    df_v = pd.read_parquet(path_v)
+    df_u = pd.read_csv(path_u)
     views_features = ['acled_count_pr', 'acled_fat_pr', 'ged_best_ns',
                       'ged_best_os', 'ged_count_ns',
                       'ged_count_os', 'ged_count_sb', 'pgd_agri_gc',
@@ -110,18 +96,52 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
                       'pgd_pasture_ih', 'pgd_petroleum', 'pgd_pop_gpw_sum',
                       'pgd_savanna_ih', 'pgd_shrub_gc', 'pgd_shrub_ih',
                       'pgd_temp', 'pgd_ttime_mean', 'pgd_urban_gc',
-                      'pgd_urban_ih', 'pgd_water_gc', 'pgd_water_ih', 'ln_ged_best_sb']  
+                      'pgd_urban_ih', 'pgd_water_gc', 'pgd_water_ih', 'ln_ged_best_sb'] 
+    utd_features_dict = {1: 'cameo_01', 2: 'cameo_02', 3: 'cameo_03', 4: 'cameo_04',
+                         5: 'cameo_05', 6: 'cameo_06', 7: 'cameo_07', 8: 'cameo_08',
+                         9: 'cameo_09', 10: 'cameo_10', 11: 'cameo_11', 12: 'cameo_12',
+                         13: 'cameo_13', 14: 'cameo_14', 15: 'cameo_15', 16: 'cameo_16',
+                         17: 'cameo_17', 18: 'cameo_18', 19: 'cameo_19', 20: 'cameo_20'}
     
-    df_views_features = df_all[views_features]
+    df_views_features = df_v[views_features]
+
     idx = pd.IndexSlice
     df_sliced = df_views_features.loc[idx[start_month:end_month]]
+    df_sliced_utd = df_sliced.copy(deep=True)
+    min_max_scaler = MinMaxScaler()
 
-    # Check if nan in data. If there is nan, raise error.
-    if True in df_sliced.isna().any().tolist():
-        raise Exception('Nan exists in the dataset, please double-check.')
-    
-    views_data = np.reshape(df_sliced.values, (end_month - start_month + 1, -1, 48))
-    return views_data
+    if event_data == False:
+        # np_sliced = df_sliced.values
+        cols_to_norm = views_features[:(len(views_features)-1)]
+        df_sliced[cols_to_norm] = min_max_scaler.fit_transform(df_sliced[cols_to_norm])
+
+        # Check if nan in data. If there is nan, raise error.
+        if True in df_sliced.isna().any().tolist():
+            raise Exception('Nan exists in the dataset, please double-check.')
+        
+        print(df_sliced.values)
+        views_data = np.reshape(df_sliced.values, (end_month - start_month + 1, -1, 48))
+        return views_data
+    else:
+        for feature in utd_features_dict.values():
+            df_sliced_utd[feature] = 0
+
+        for idx, row in df_u.iterrows():
+            df_sliced_utd.loc[(row['month'], row['pg-id']), utd_features_dict[row['cameo rt']]] = row['counts']
+            if int(idx) % 10000 == 0:
+                print('processed:', idx)
+
+        for feature in utd_features_dict.values():
+            df_sliced_utd[feature] = df_sliced_utd[feature] / (df_sliced_utd['pgd_pop_gpw_sum'] + 1)
+
+        cols = df_sliced_utd.columns.tolist()
+        new_cols = cols[:47] + cols[48:] + [cols[47]]
+        df_sliced_utd = df_sliced_utd[new_cols]
+        utd_data = np.reshape(df_sliced_utd.values, (end_month - start_month + 1, -1, 68))
+
+        # Temporarily save the data to pickle
+        pk.dump(utd_data, open('data/processed/pgm_utd_features.pkl', 'wb'))
+        return utd_data
 
 
 # This scaler needs to be further tested.

@@ -147,7 +147,7 @@ def get_coord_box(coordinate):
 
 if __name__ == '__main__':
 
-    years = ['1995', '1996', '1997', '1998', '1999']
+    years = ['2017']
     for year in years:
         parser = argparse.ArgumentParser(description='UTD Event Data Converter', conflict_handler='resolve')
         parser.add_argument('--sourceType', type=str, default='ICEWS', help='type of source data tables')

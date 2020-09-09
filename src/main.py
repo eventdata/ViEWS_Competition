@@ -34,17 +34,15 @@ def main():
     parser = argparse.ArgumentParser(description='STGCN')
     parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
     parser.add_argument('--bsize', default=32, type=int, help='batch size')
-    parser.add_argument('--epochs', default=50, type=int, help='epochs for training, default: 50')
+    parser.add_argument('--epochs', default=20, type=int, help='epochs for training, default: 50')
     parser.add_argument('--window', default=54, type=int, help='window length')
     parser.add_argument('--fdir', default='models', type=str, help='directory to save trained models')
     parser.add_argument('--fname', default='stgcn_new.pt', type=str, help='name of model to be saved')
     parser.add_argument('--npred', default=6, type=int, help='number of steps/months to predict')
     parser.add_argument('--channels', default=[47, 32, 16, 32, 16, 6], type=int, nargs='+', help='model structure controller')
-    # parser.add_argument('--channels', default=[48, 64, 8, 64, 8, 6], type=int, nargs='+', help='model structure controller')
     parser.add_argument('--pdrop', default=0, type=float, help='probability setting for the dropout layer')
     parser.add_argument('--nlayer', default=9, type=int, help='number of layers')
     parser.add_argument('--cstring', default='TNTSTNTST', type=str, help='model architecture controller, T: Temporal Layer; S: Spatio Layer; N: Normalization Layer')
-
     args = parser.parse_args()
 
     device = th.device('cuda') if th.cuda.is_available() else th.device('cpu')
@@ -112,7 +110,6 @@ def main():
         model.train()
         for x, y in train_iter:
             x, y = x.to(device), y.to(device)
-            # y_pred = model(x).view(len(x), -1)
             y_pred = model(x).squeeze()
             l = loss(y_pred, y)
             optimizer.zero_grad()
@@ -133,8 +130,8 @@ def main():
 
 
     l = evaluate_model(best_model, loss, test_iter, device=device)
-    MAE, MSE = evaluate_metric(best_model, test_iter, device=device)
-    print('test loss:', l, '\nMAE', MAE, '\nMSE', MSE)
+    MAE, MSE, CRPS = evaluate_metric(best_model, test_iter, device=device)
+    print('test loss:', l, '\nMAE', MAE, '\nMSE', MSE, '\nCRPS', CRPS)
 
 if __name__ == '__main__':
     main()
