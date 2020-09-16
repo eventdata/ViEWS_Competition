@@ -11,6 +11,7 @@ import pickle as pk
 from collections import defaultdict
 import bisect
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MaxAbsScaler
 from sklearn.preprocessing import StandardScaler
 
 def get_adj_matrix(path):
@@ -109,6 +110,7 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
     df_sliced = df_views_features.loc[idx[start_month:end_month]]
     df_sliced_utd = df_sliced.copy(deep=True)
     min_max_scaler = MinMaxScaler()
+    max_abs_scaler = MaxAbsScaler()
 
     if event_data == False:
         # np_sliced = df_sliced.values
@@ -137,6 +139,10 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
         cols = df_sliced_utd.columns.tolist()
         new_cols = cols[:47] + cols[48:] + [cols[47]]
         df_sliced_utd = df_sliced_utd[new_cols]
+        feature_list_utd = list(df_sliced_utd.columns)
+        cols_to_norm = feature_list_utd[:(len(feature_list_utd) - 1)]
+        # df_sliced_utd[cols_to_norm] = min_max_scaler.fit_transform(df_sliced_utd[cols_to_norm])
+        df_sliced_utd[cols_to_norm] = max_abs_scaler.fit_transform(df_sliced_utd[cols_to_norm])
         utd_data = np.reshape(df_sliced_utd.values, (end_month - start_month + 1, -1, 68))
 
         # Temporarily save the data to pickle

@@ -39,7 +39,7 @@ def main():
     parser.add_argument('--fdir', default='models', type=str, help='directory to save trained models')
     parser.add_argument('--fname', default='stgcn_new.pt', type=str, help='name of model to be saved')
     parser.add_argument('--npred', default=6, type=int, help='number of steps/months to predict')
-    parser.add_argument('--channels', default=[47, 32, 16, 32, 16, 6], type=int, nargs='+', help='model structure controller')
+    parser.add_argument('--channels', default=[67, 32, 16, 32, 16, 6], type=int, nargs='+', help='model structure controller')
     parser.add_argument('--pdrop', default=0, type=float, help='probability setting for the dropout layer')
     parser.add_argument('--nlayer', default=9, type=int, help='number of layers')
     parser.add_argument('--cstring', default='TNTSTNTST', type=str, help='model architecture controller, T: Temporal Layer; S: Spatio Layer; N: Normalization Layer')
@@ -55,9 +55,13 @@ def main():
     g.from_scipy_sparse_matrix(sp_matrix)
 
     # Convert features to tensors
-    feature_path_v = 'data/processed/pgm_africa_imp_0.parquet'
-    feature_path_u = 'data/processed/pgm_africa_utd.csv'
-    views_data = get_feature_matrix(feature_path_v, feature_path_u) # t x n x d
+    proc_pkl = 'data/processed/pgm_utd_features.pkl'
+    if os.path.exists(proc_pkl):
+        views_data = np.load(proc_pkl, allow_pickle=True)
+    else:
+        feature_path_v = 'data/processed/pgm_africa_imp_0.parquet'
+        feature_path_u = 'data/processed/pgm_africa_utd.csv'
+        views_data = get_feature_matrix(feature_path_v, feature_path_u, event_data=True) # t x n x d
     n_samples, n_nodes, n_features = views_data.shape 
 
     # Define the dir of saving model

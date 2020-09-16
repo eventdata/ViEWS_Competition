@@ -16,4 +16,5 @@ pdrop: 0 # default int 0
 nlayer: 9 # default int 9
 cstring: 'TNTSTNTST' # default str 'TNTSTNTST'
 channels: [47, 32, 16, 32, 16, 6] # default list [67, 32, 16, 32, 16, 6]
+edata: False
 
