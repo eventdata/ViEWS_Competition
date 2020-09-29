@@ -34,15 +34,17 @@ def main():
     parser = argparse.ArgumentParser(description='STGCN')
     parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
     parser.add_argument('--bsize', default=32, type=int, help='batch size')
-    parser.add_argument('--epochs', default=20, type=int, help='epochs for training, default: 50')
+    parser.add_argument('--epochs', default=50, type=int, help='epochs for training, default: 50')
     parser.add_argument('--window', default=54, type=int, help='window length')
     parser.add_argument('--fdir', default='models', type=str, help='directory to save trained models')
     parser.add_argument('--fname', default='stgcn_new.pt', type=str, help='name of model to be saved')
     parser.add_argument('--npred', default=6, type=int, help='number of steps/months to predict')
-    parser.add_argument('--channels', default=[67, 32, 16, 32, 16, 6], type=int, nargs='+', help='model structure controller')
+    # parser.add_argument('--channels', default=[67, 32, 16, 32, 16, 6], type=int, nargs='+', help='model structure controller')
+    parser.add_argument('--channels', default=[67, 16, 32, 16, 32, 6], type=int, nargs='+', help='model structure controller')
     parser.add_argument('--pdrop', default=0, type=float, help='probability setting for the dropout layer')
     parser.add_argument('--nlayer', default=9, type=int, help='number of layers')
-    parser.add_argument('--cstring', default='TNTSTNTST', type=str, help='model architecture controller, T: Temporal Layer; S: Spatio Layer; N: Normalization Layer')
+    # parser.add_argument('--cstring', default='TNTSTNTST', type=str, help='model architecture controller, T: Temporal Layer; S: Spatio Layer; N: Normalization Layer')
+    parser.add_argument('--cstring', default='TSTNTSTNT', type=str, help='model architecture controller, T: Temporal Layer; S: Spatio Layer; N: Normalization Layer')
     args = parser.parse_args()
 
     device = th.device('cuda') if th.cuda.is_available() else th.device('cpu')
@@ -55,7 +57,7 @@ def main():
     g.from_scipy_sparse_matrix(sp_matrix)
 
     # Convert features to tensors
-    proc_pkl = 'data/processed/pgm_utd_features.pkl'
+    proc_pkl = 'data/processed/pgm_utd_features_min_max.pkl'
     if os.path.exists(proc_pkl):
         views_data = np.load(proc_pkl, allow_pickle=True)
     else:
@@ -102,7 +104,8 @@ def main():
     loss = nn.MSELoss()
     g = g.to(device)
     model = STGCNCNN(channels, n_his, n_nodes, g, p_drop, n_layer, control_str).to(device)
-    optimizer = th.optim.RMSprop(model.parameters(), lr=lr)
+    # optimizer = th.optim.RMSprop(model.parameters(), lr=lr)
+    optimizer = th.optim.Adam(model.parameters(), lr=lr)
     scheduler = th.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.7)
     # print(summary(model, (32, 48, 54, 10677)))
 

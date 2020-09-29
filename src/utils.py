@@ -40,7 +40,7 @@ def evaluate_metric(model, data_iter, device='cpu'):
         for i in range(6):
             MAE.append(np.array(mae)[:, i, :].mean())
             MSE.append(np.array(mse)[:, i, :].mean())
-            CRPS.append(ps.crps_ensemble(0, np.array(mae)[:, i, :].flatten()))
+            CRPS.append(ps.crps_ensemble(0, np.array(mae)[:, i, :].mean(axis=0)))
 
     return MAE, MSE, CRPS
 
