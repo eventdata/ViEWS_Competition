@@ -1,1 +1,1 @@
-This is a readme file
+# STGCN model for ViEWS competition
