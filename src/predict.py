@@ -37,7 +37,7 @@ def main():
     parser.add_argument('--epochs', default=50, type=int, help='epochs for training, default: 50')
     parser.add_argument('--window', default=54, type=int, help='window length')
     parser.add_argument('--fdir', default='models', type=str, help='directory to save trained models')
-    parser.add_argument('--fname', default='stgcn_new_1.pt', type=str, help='name of model to be saved')
+    parser.add_argument('--fname', default='stgcn_new_best.pt', type=str, help='name of model to be saved')
     parser.add_argument('--npred', default=6, type=int, help='number of steps/months to predict')
     # parser.add_argument('--channels', default=[47, 16, 32, 64, 32, 6], type=int, nargs='+', help='model structure controller')
     parser.add_argument('--channels', default=[47, 32, 16, 32, 16, 6], type=int, nargs='+', help='model structure controller')
@@ -64,7 +64,7 @@ def main():
         # feature_path_v = 'data/processed/pgm_africa_imp_0.parquet'
         feature_path_v = 'data/raw/pgm.csv'
         feature_path_u = 'data/processed/pgm_africa_utd.csv'
-        views_data = get_feature_matrix(feature_path_v, feature_path_u, end_month=480, event_data=False) # t x n x d
+        views_data = get_feature_matrix(feature_path_v, feature_path_u, end_month=496, event_data=False) # t x n x d
     n_samples, n_nodes, n_features = views_data.shape 
 
     # Define the dir of saving model
@@ -86,7 +86,7 @@ def main():
 
     # Define the training, testing, validation set
     train_val_split = 444 - 241 + 1
-    val_test_split = 456 - 445 + 1 + train_val_split
+    val_test_split = 488 - 445 + 1 + train_val_split
     train = views_data[:train_val_split, :, :]
     val = views_data[train_val_split - n_his:val_test_split, :, :]
     test = views_data[val_test_split - n_his:, :, :]
@@ -96,11 +96,11 @@ def main():
     X_test, y_test = get_feature_seqs(test, n_his, n_pred)
 
     train_data = th.utils.data.TensorDataset(X_train, y_train)
-    train_iter = th.utils.data.DataLoader(train_data, batch_size, shuffle=True)
+    train_iter = th.utils.data.DataLoader(train_data, batch_size, shuffle=False)
     val_data = th.utils.data.TensorDataset(X_val, y_val)
-    val_iter = th.utils.data.DataLoader(val_data, batch_size, shuffle=True)
+    val_iter = th.utils.data.DataLoader(val_data, batch_size, shuffle=False)
     test_data = th.utils.data.TensorDataset(X_test, y_test)
-    test_iter = th.utils.data.DataLoader(test_data, batch_size, shuffle=True)
+    test_iter = th.utils.data.DataLoader(test_data, batch_size, shuffle=False)
 
     loss = nn.MSELoss()
     g = g.to(device)
@@ -110,33 +110,49 @@ def main():
     scheduler = th.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.7)
     # print(summary(model, (32, 48, 54, 10677)))
 
-    min_val_loss = np.inf
-    for epoch in range(1, epochs + 1):
-        logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-        logging.warning('. Currently running Epoch {}...'.format(str(epoch)))
-        l_sum, n = 0.0, 0
-        model.train()
-        for x, y in train_iter:
-            x, y = x.to(device), y.to(device)
-            y_pred = model(x).squeeze()
-            l = loss(y_pred, y)
-            optimizer.zero_grad()
-            l.backward()
-            optimizer.step()
-            l_sum += l.item() * y.shape[0]
-            n += y.shape[0]
-        scheduler.step()
-        val_loss = evaluate_model(model, loss, val_iter, device=device)
-        if val_loss < min_val_loss:
-            min_val_loss = val_loss
-            th.save(model.state_dict(), save_path)
-        print("epoch", epoch, ", train loss:", l_sum / n, ", validation loss:", val_loss)
+    # min_val_loss = np.inf
+    # for epoch in range(1, epochs + 1):
+    #     logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    #     logging.warning('. Currently running Epoch {}...'.format(str(epoch)))
+    #     l_sum, n = 0.0, 0
+    #     model.train()
+    #     for x, y in train_iter:
+    #         x, y = x.to(device), y.to(device)
+    #         y_pred = model(x).squeeze()
+    #         l = loss(y_pred, y)
+    #         optimizer.zero_grad()
+    #         l.backward()
+    #         optimizer.step()
+    #         l_sum += l.item() * y.shape[0]
+    #         n += y.shape[0]
+    #     scheduler.step()
+    #     val_loss = evaluate_model(model, loss, val_iter, device=device)
+    #     if val_loss < min_val_loss:
+    #         min_val_loss = val_loss
+    #         th.save(model.state_dict(), save_path)
+    #     print("epoch", epoch, ", train loss:", l_sum / n, ", validation loss:", val_loss)
 
 
     best_model = STGCNCNN(channels, n_his, n_nodes, g, p_drop, n_layer, control_str).to(device)
     best_model.load_state_dict(th.load(save_path))     
-    MAE, MSE, CRPS = evaluate_metric(best_model, test_iter, device=device)
-    print('test loss:', l, '\nMAE', MAE, '\nMSE', MSE, '\nCRPS', CRPS)
+
+
+    # l = evaluate_model(best_model, loss, test_iter, device=device)
+    
+    with th.no_grad():
+        best_model.eval()
+        mae, mse = [], []
+        # y_pred_hist, y_hist = [], []
+        for x, y in test_iter:
+            x, y = x.to(device), y.to(device)
+            x[th.isnan(x)] = 0
+            y_pred = best_model(x).squeeze()
+            y, y_pred = y.detach().cpu().numpy(), y_pred.detach().cpu().numpy()
+    
+    np.save('data/results/y_pred', y_pred)
+    print('here')
+    # MAE, MSE, CRPS = evaluate_metric(best_model, test_iter, device=device)
+    # print('test loss:', l, '\nMAE', MAE, '\nMSE', MSE, '\nCRPS', CRPS)
 
 if __name__ == '__main__':
     main()
