@@ -17,5 +17,6 @@ Please run the following command for train the model.
 ```
 python src/main.py
 ```
-This file automatically read the config file __task1.yaml__ from folder "src/configs/"
-To run task 2 or task 3, please change line 36 in the main.py according.
+This file automatically read the config file __task1.yaml__ from folder "src/configs/".
+
+To run task 2 or task 3, please change line 36 in the main.py accordingly.
