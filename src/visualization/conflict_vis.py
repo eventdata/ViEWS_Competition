@@ -8,14 +8,14 @@ import matplotlib.pyplot as plt
 years = range(2000, 2017)
 
 for year in years:
-    _dir = './data/interim/'
+    _dir = './data/processed/'
     agg_data = _dir + 'ICEWS' + str(year) + '_agg.json'
     pg_data = _dir + 'priogrid_AF.csv'
 
     df_pg = pd.read_csv(pg_data)
     df_icews = pd.read_json(agg_data)
 
-    df_icews.rename({'pg-id': 'gid'}, axis=1, inplace=True)
+    df_icews.rename({'pg-id': 'gid'}, )
     df_conflict = df_icews[df_icews['cameo rt'].isin([9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])]
     df_icews_year = df_conflict[['gid', 'counts']].groupby(['gid'], as_index=False).sum()
 
@@ -23,6 +23,9 @@ for year in years:
     df_fill0 = df_join.fillna(value=0)
     # df_fill0.to_csv('counts.csv')
     df_fill0['log_counts'] = np.log(df_fill0['counts'] + 1)
+    for idx, row in df_fill0.iterrows():
+        if row['log_counts'] < 0.2:
+            df_fill0.loc[idx]['log_counts'] = 0
 
 
     ax1 = df_fill0.plot.scatter(x='col', y='row', c='log_counts', colormap='viridis', s=1)

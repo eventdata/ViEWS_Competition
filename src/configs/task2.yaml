@@ -1,0 +1,29 @@
+# This file contains the configs for running stgcn_cnn 
+
+# Training
+lr: 0.01 # default float 0.01
+bsize: 32 # default int 32
+epochs: 50 # default int 50
+window: 54 # default int 54
+npred: 6 # default int 6
+
+# I/O
+fname: 'stgcn_cnn.pt' # default str 'stgcn.pt'
+fdir: 'models' # default str 'models'
+adj_path: 'data/processed/priogrid_AF.csv'
+proc_pkl: 'data/processed/pgm_utd_features_min_max.pkl'
+feature_path_v: 'data/raw/pgm.csv'
+feature_path_u: 'data/processed/pgm_africa_utd.csv'
+
+# Model
+pdrop: 0 # default int 0
+nlayer: 9 # default int 9
+cstring: 'TNTSTNTST' # default str 'TNTSTNTST'
+channels: [47, 32, 16, 32, 16, 6] # default list [67, 32, 16, 32, 16, 6]
+edata: False
+
+# Data
+train_split: [241, 432]
+val_split: [433, 444]
+test_split: [445, 480]
+event_data: True

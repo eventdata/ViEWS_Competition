@@ -15,6 +15,8 @@ import scipy.sparse as sp
 from sklearn.preprocessing import StandardScaler
 import logging
 import yaml
+import datetime
+
 
 cur_dir = os.getcwd()
 sys.path.append(cur_dir)
@@ -31,62 +33,58 @@ def main():
     '''
     Setting up parameters of the model
     '''
-    parser = argparse.ArgumentParser(description='STGCN')
-    parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
-    parser.add_argument('--bsize', default=16, type=int, help='batch size')
-    parser.add_argument('--epochs', default=50, type=int, help='epochs for training, default: 50')
-    parser.add_argument('--window', default=54, type=int, help='window length')
-    parser.add_argument('--fdir', default='models', type=str, help='directory to save trained models')
-    parser.add_argument('--fname', default='stgcn_new_1.pt', type=str, help='name of model to be saved')
-    parser.add_argument('--npred', default=6, type=int, help='number of steps/months to predict')
-    # parser.add_argument('--channels', default=[47, 16, 32, 64, 32, 6], type=int, nargs='+', help='model structure controller')
-    parser.add_argument('--channels', default=[47, 32, 16, 32, 16, 6], type=int, nargs='+', help='model structure controller')
-    parser.add_argument('--pdrop', default=0.5, type=float, help='probability setting for the dropout layer')
-    parser.add_argument('--nlayer', default=9, type=int, help='number of layers')
-    parser.add_argument('--cstring', default='TNTSTNTST', type=str, help='model architecture controller, T: Temporal Layer; S: Spatio Layer; N: Normalization Layer')
-    # parser.add_argument('--cstring', default='TNTSTNT', type=str, help='model architecture controller, T: Temporal Layer; S: Spatio Layer; N: Normalization Layer')
-    args = parser.parse_args()
+    yaml_path = 'src/configs/stgcn_cnn_vu_task1.yaml'
+    with open(yaml_path) as f:
+        params = yaml.load(f, Loader=yaml.FullLoader)
+        print(params)
+    
 
     device = th.device('cuda') if th.cuda.is_available() else th.device('cpu')
 
+    event_data = params['event_data']
+
     # Construct the graph
-    adj_path = 'data/processed/priogrid_AF.csv'
+    adj_path = params.get('adj_path')
     adj_matrix = get_adj_matrix(adj_path)
     sp_matrix = sp.coo_matrix(adj_matrix)
-    g = dgl.DGLGraph()
-    g.from_scipy_sparse_matrix(sp_matrix)
+    # g = dgl.DGLGraph()
+    # g.from_scipy_sparse_matrix(sp_matrix)
+    g = dgl.from_scipy(sp_matrix)
 
     # Convert features to tensors
-    proc_pkl = 'data/processed/pgm_utd_features_min_max.pkl'
+    proc_pkl = params.get('proc_pkl')
     if os.path.exists(proc_pkl):
         views_data = np.load(proc_pkl, allow_pickle=True)
     else:
         # feature_path_v = 'data/processed/pgm_africa_imp_0.parquet'
         feature_path_v = 'data/raw/pgm.csv'
         feature_path_u = 'data/processed/pgm_africa_utd.csv'
-        views_data = get_feature_matrix(feature_path_v, feature_path_u, end_month=480, event_data=False) # t x n x d
+        views_data = get_feature_matrix(feature_path_v, feature_path_u, end_month=486, event_data=event_data) # t x n x d
     n_samples, n_nodes, n_features = views_data.shape 
 
     # Define the dir of saving model
-    _dir = args.fdir
-    _filename = args.fname
+    _dir = params.get('dir')
+    _filename = params.get('fname')
     save_path = _dir + '/' + _filename
 
     # Load all parameters
-    n_his = args.window
-    n_pred = args.npred
-    p_drop = args.pdrop
+    n_his = params.get('window')
+    n_pred = params.get('npred')
+    p_drop = params.get('pdrop')
 
-    channels = args.channels
-    control_str = args.cstring
-    n_layer = args.nlayer
-    batch_size = args.bsize
-    lr = args.lr
-    epochs = args.epochs
+    channels = params.get('channels')
+    control_str = params.get('cstring')
+    n_layer = params.get('nlayer')
+    batch_size = params.get('bsize')
+    lr = params.get('lr')
+    epochs = params.get('epochs')
+    train_start, train_end = params.get('train_split')
+    val_start, val_end = params.get('val_split')
+    test_start, test_end = params.get('test_split')
 
     # Define the training, testing, validation set
-    train_val_split = 444 - 241 + 1
-    val_test_split = 456 - 445 + 1 + train_val_split
+    train_val_split = train_end - train_start + 1
+    val_test_split = val_end - val_start + 1 + train_val_split
     train = views_data[:train_val_split, :, :]
     val = views_data[train_val_split - n_his:val_test_split, :, :]
     test = views_data[val_test_split - n_his:, :, :]
@@ -100,7 +98,7 @@ def main():
     val_data = th.utils.data.TensorDataset(X_val, y_val)
     val_iter = th.utils.data.DataLoader(val_data, batch_size, shuffle=True)
     test_data = th.utils.data.TensorDataset(X_test, y_test)
-    test_iter = th.utils.data.DataLoader(test_data, batch_size, shuffle=True)
+    test_iter = th.utils.data.DataLoader(test_data, batch_size, shuffle=False)
 
     loss = nn.MSELoss()
     g = g.to(device)
@@ -132,11 +130,14 @@ def main():
             th.save(model.state_dict(), save_path)
         print("epoch", epoch, ", train loss:", l_sum / n, ", validation loss:", val_loss)
 
-
+    print('staring evaluation...')
+    print(datetime.datetime.now())
     best_model = STGCNCNN(channels, n_his, n_nodes, g, p_drop, n_layer, control_str).to(device)
     best_model.load_state_dict(th.load(save_path))     
-    MAE, MSE, CRPS = evaluate_metric(best_model, test_iter, device=device)
-    print('test loss:', l, '\nMAE', MAE, '\nMSE', MSE, '\nCRPS', CRPS)
+    MAE, MSE, CRPS, RMSE = evaluate_metric(best_model, test_iter, device=device)
+    print('test loss:', l, '\nMAE', MAE, '\nMSE', MSE, '\nCRPS', CRPS, '\nRMSE', RMSE)
+    print('finished...')
+    print(datetime.datetime.now())
 
 if __name__ == '__main__':
     main()

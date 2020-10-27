@@ -64,7 +64,7 @@ def main():
         # feature_path_v = 'data/processed/pgm_africa_imp_0.parquet'
         feature_path_v = 'data/raw/pgm.csv'
         feature_path_u = 'data/processed/pgm_africa_utd.csv'
-        views_data = get_feature_matrix(feature_path_v, feature_path_u, end_month=496, event_data=False) # t x n x d
+        views_data = get_feature_matrix(feature_path_v, feature_path_u, end_month=450, event_data=False) # t x n x d
     n_samples, n_nodes, n_features = views_data.shape 
 
     # Define the dir of saving model
@@ -85,8 +85,8 @@ def main():
     epochs = args.epochs
 
     # Define the training, testing, validation set
-    train_val_split = 444 - 241 + 1
-    val_test_split = 488 - 445 + 1 + train_val_split
+    train_val_split = 389 - 241 + 1
+    val_test_split = 402 - 390 + 1 + train_val_split
     train = views_data[:train_val_split, :, :]
     val = views_data[train_val_split - n_his:val_test_split, :, :]
     test = views_data[val_test_split - n_his:, :, :]
@@ -142,14 +142,17 @@ def main():
     with th.no_grad():
         best_model.eval()
         mae, mse = [], []
-        # y_pred_hist, y_hist = [], []
+        y_pred_hist, y_hist = [], []
         for x, y in test_iter:
             x, y = x.to(device), y.to(device)
             x[th.isnan(x)] = 0
             y_pred = best_model(x).squeeze()
             y, y_pred = y.detach().cpu().numpy(), y_pred.detach().cpu().numpy()
+            y_pred_hist.append(y_pred)
+            y_hist.append(y)
     
-    np.save('data/results/y_pred', y_pred)
+    np.save('y-pred-51', y_pred_hist)
+    np.save('y-actual-51', y_hist)
     print('here')
     # MAE, MSE, CRPS = evaluate_metric(best_model, test_iter, device=device)
     # print('test loss:', l, '\nMAE', MAE, '\nMSE', MSE, '\nCRPS', CRPS)

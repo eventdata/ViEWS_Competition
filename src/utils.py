@@ -26,30 +26,37 @@ def evaluate_metric(model, data_iter, device='cpu'):
     model.eval()
     with th.no_grad():
         mae, mse = [], []
-        # y_pred_hist, y_hist = [], []
+        y_pred_hist, y_hist = [], []
         for x, y in data_iter:
             x, y = x.to(device), y.to(device)
             y_pred = model(x).squeeze()
             y, y_pred = y.detach().cpu().numpy(), y_pred.detach().cpu().numpy()
-            now = datetime.now()
-            time = now.strftime('%H-%M-%S')
-            y_fname = 'y-actual-' + time
-            y_pred_fname = 'y-pred-' + time
-            np.save(y_fname, y)
-            np.save(y_pred_fname, y_pred)
-            # y_pred_hist.append(y_pred)
-            # y_hist.append(y)
+            y_hist.append(y)
+            y_pred_hist.append(y_pred)
+            # now = datetime.now()
+            # time = now.strftime('%H-%M-%S')
+            # y_fname = 'y-actual-' + time
+            # y_pred_fname = 'y-pred-' + time
+            # np.save(y_fname, y)
+            # np.save(y_pred_fname, y_pred)
             d = np.abs(y - y_pred)
             mae += d.tolist()
             mse += (d ** 2).tolist()
         
+        now = datetime.now()
+        time = now.strftime('%H-%M-%S')
+        y_fname = 'y-actual-' + time
+        y_pred_fname = 'y-pred-' + time
+        np.save(y_fname, y_hist)
+        np.save(y_pred_fname, y_pred_hist)
         # MAE = np.array(mae).mean()
         # MSE = np.array(mse).mean()
 
-        MAE, MSE, CRPS = [], [], []
+        MAE, MSE, CRPS, RMSE = [], [], [], []
         for i in range(6):
             MAE.append(np.array(mae)[:, i, :].mean())
             MSE.append(np.array(mse)[:, i, :].mean())
+            RMSE.append(np.sqrt(np.array(mse)[:, i, :].mean()))
             CRPS.append(ps.crps_ensemble(0, np.array(mae)[:, i, :].mean(axis=0)))
         
 
@@ -67,7 +74,7 @@ def evaluate_metric(model, data_iter, device='cpu'):
     
 
 
-    return MAE, MSE, CRPS
+    return MAE, MSE, CRPS, RMSE
 
 
 
