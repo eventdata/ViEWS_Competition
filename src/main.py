@@ -33,7 +33,7 @@ def main():
     '''
     Setting up parameters of the model
     '''
-    yaml_path = 'src/configs/stgcn_cnn_vu_task1.yaml'
+    yaml_path = 'src/configs/task1.yaml'
     with open(yaml_path) as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
         print(params)
