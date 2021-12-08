@@ -13,6 +13,7 @@ import bisect
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import MaxAbsScaler
 from sklearn.preprocessing import StandardScaler
+import logging
 
 def get_adj_matrix(path):
     '''Create the adjacency matrix of the graph
@@ -105,6 +106,10 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
                          17: 'cameo_17', 18: 'cameo_18', 19: 'cameo_19', 20: 'cameo_20'}
     
     df_views_features = df_v[views_features]
+    logging.basicConfig(filename='log.log',
+                    format='%(asctime)s - %(name)s - %(levelname)s -%(module)s:  %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S %p',
+                    level=10)
 
     idx = pd.IndexSlice
     df_sliced = df_views_features.loc[idx[start_month:end_month]]
@@ -131,6 +136,8 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
         for idx, row in df_u.iterrows():
             df_sliced_utd.loc[(row['month'], row['pg-id']), utd_features_dict[row['cameo rt']]] = row['counts']
             if int(idx) % 10000 == 0:
+
+                logging.debug('processed 10,000 indexes')
                 print('processed:', idx)
 
         for feature in utd_features_dict.values():
@@ -146,7 +153,7 @@ def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_mo
         utd_data = np.reshape(df_sliced_utd.values, (end_month - start_month + 1, -1, 68))
 
         # Temporarily save the data to pickle
-        pk.dump(utd_data, open('data/processed/pgm_utd_features.pkl', 'wb'))
+        pk.dump(utd_data, open('data/processed/pgm_utd_features_min_max.pkl', 'wb'))
         return utd_data
 
 # def get_feature_matrix(path_v, path_u, event_data=False, start_month=241, end_month=456):

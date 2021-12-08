@@ -11,7 +11,8 @@ npred: 6 # default int 6
 fname: 'stgcn_cnn.pt' # default str 'stgcn.pt'
 fdir: 'models' # default str 'models'
 adj_path: 'data/processed/priogrid_AF.csv'
-proc_pkl: 'data/processed/pgm_utd_features_min_max.pkl'
+# proc_pkl: 'data/processed/pgm_utd_features_min_max.pkl'
+proc_pkl: 'data/processed/pgm_utd_features_max_abs.pkl'
 feature_path_v: 'data/raw/pgm.csv'
 feature_path_u: 'data/processed/pgm_africa_utd.csv'
 
@@ -19,7 +20,8 @@ feature_path_u: 'data/processed/pgm_africa_utd.csv'
 pdrop: 0 # default int 0
 nlayer: 9 # default int 9
 cstring: 'TNTSTNTST' # default str 'TNTSTNTST'
-channels: [47, 32, 16, 32, 16, 6] # default list [67, 32, 16, 32, 16, 6]
+# channels: [47, 32, 16, 32, 16, 6] # default list [67, 32, 16, 32, 16, 6]
+channels: [67, 32, 16, 32, 16, 6] # default list [67, 32, 16, 32, 16, 6]
 edata: False
 
 # Data
