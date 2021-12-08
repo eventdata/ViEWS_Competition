@@ -52,7 +52,8 @@ def main(args):
 
     device = th.device('cuda') if th.cuda.is_available() else th.device('cpu')
 
-    event_data = params['event_data']
+    # event_data = params['event_data']
+    event_data = use_event_data
 
     logging.debug('constructing graphs')
     # Construct the graph
@@ -68,7 +69,7 @@ def main(args):
     proc_pkl = params.get('proc_pkl')
     feature_path_v = 'data/raw/pgm.csv'
     feature_path_u = 'data/processed/pgm_africa_utd.csv'
-    views_data = get_feature_matrix(feature_path_v, feature_path_u, end_month=486, event_data=event_data) # t x n x d
+    views_data = get_feature_matrix(feature_path_v, feature_path_u, rm_category=rm_category, end_month=486, event_data=event_data) # t x n x d
     n_samples, n_nodes, n_features = views_data.shape 
 
     logging.debug('loading params')
