@@ -39,7 +39,7 @@ def main(args):
     temporal_model = args.tmodel
 
 
-    yaml_path = 'src/configs/' + target_task + '.yaml'
+    yaml_path = 'src/configs/' + str(target_task) + '.yaml'
     with open(yaml_path) as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
         print(params)
@@ -160,10 +160,10 @@ def main(args):
     logging.debug('finished evaluation')
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(descriptioin='STGCN parameters')
-    parser.add('--event', type=bool, default=True, help='determine if utd event data is used.')
-    parser.add('--rmcategory', type=list, default=[0], help='determine if a certain category of feature needs to be removed.')
-    parser.add('--tmodel', type=str, default='tcn', help='determine the model for temporal relationship modeling.')
-    parser.add('--task', type=int, default=1, help='determine the prediction task of the model')
+    parser = argparse.ArgumentParser(description='STGCN parameters')
+    parser.add_argument('--event', type=bool, default=True, help='determine if utd event data is used.')
+    parser.add_argument('--rmcategory', type=list, default=[0], help='determine if a certain category of feature needs to be removed.')
+    parser.add_argument('--tmodel', type=str, default='tcn', help='determine the model for temporal relationship modeling.')
+    parser.add_argument('--task', type=int, default=1, help='determine the prediction task of the model')
     args = parser.parse_args()
     main(args)
