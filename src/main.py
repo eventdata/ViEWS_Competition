@@ -39,7 +39,7 @@ def main(args):
     temporal_model = args.tmodel
 
 
-    yaml_path = 'src/configs/' + str(target_task) + '.yaml'
+    yaml_path = 'src/configs/task' + str(target_task) + '.yaml'
     with open(yaml_path) as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
         print(params)
@@ -69,7 +69,7 @@ def main(args):
     proc_pkl = params.get('proc_pkl')
     feature_path_v = 'data/raw/pgm.csv'
     feature_path_u = 'data/processed/pgm_africa_utd.csv'
-    views_data = get_feature_matrix(feature_path_v, feature_path_u, rm_category=rm_category, end_month=486, event_data=event_data) # t x n x d
+    views_data = get_feature_matrix(feature_path_v, feature_path_u, end_month=486, event_data=event_data) # t x n x d
     n_samples, n_nodes, n_features = views_data.shape 
 
     logging.debug('loading params')
@@ -153,8 +153,8 @@ def main(args):
     print(datetime.datetime.now())
     best_model = STGCNCNN(channels, n_his, n_nodes, g, p_drop, n_layer, control_str).to(device)
     best_model.load_state_dict(th.load(save_path))     
-    MAE, MSE, CRPS, RMSE = evaluate_metric(best_model, test_iter, device=device)
-    print('test loss:', l, '\nMAE', MAE, '\nMSE', MSE, '\nCRPS', CRPS, '\nRMSE', RMSE)
+    MAE, MSE, RMSE = evaluate_metric(best_model, test_iter, device=device)
+    print('test loss:', l, '\nMAE', MAE, '\nMSE', MSE, '\nRMSE', RMSE)
     print('finished...')
     print(datetime.datetime.now())
     logging.debug('finished evaluation')

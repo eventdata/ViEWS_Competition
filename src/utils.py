@@ -52,29 +52,15 @@ def evaluate_metric(model, data_iter, device='cpu'):
         # MAE = np.array(mae).mean()
         # MSE = np.array(mse).mean()
 
-        MAE, MSE, CRPS, RMSE = [], [], [], []
+        MAE, MSE, RMSE = [], [], []
         for i in range(6):
             MAE.append(np.array(mae)[:, i, :].mean())
             MSE.append(np.array(mse)[:, i, :].mean())
             RMSE.append(np.sqrt(np.array(mse)[:, i, :].mean()))
-            CRPS.append(ps.crps_ensemble(0, np.array(mae)[:, i, :].mean(axis=0)))
-        
-
-    
-    # # Save the y_pred_hist and y_hist to csv for visulization
-    # n_rows = len(y_pred_hist)
-    # n_cols = len(y_pred_hist[0])
-    # total_len = n_rows + n_cols - 1
-    # res_pred = np.zeros((n_rows, total_len))
-    # res = np.zeros((n_rows, total_len))
-    # for idx, val in enumerate(y_pred_hist):
-    #     res_pred[idx, idx:(idx + n_cols)] = val
-    # for idx, val in enumerate(y_hist):
-    #     res[idx, idx:(idx + n_cols)] = val
     
 
 
-    return MAE, MSE, CRPS, RMSE
+    return MAE, MSE, RMSE
 
 
 
